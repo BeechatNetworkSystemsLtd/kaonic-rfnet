@@ -10,19 +10,16 @@
 
 #include <string.h>
 
-/*****************************************************************************/
-
-#if 0
-#define RFNET_LOG(...)       \
-    do {                     \
-        printk("rfnet:> ");  \
-        printk(__VA_ARGS__); \
-        printk("\n\r");      \
-    } while (0)
-
+#ifdef RFNET_PORT_INCLUDE
+#include "rfnet_port.h"
 #else
-#define RFNET_LOG(...)
+
+// Default implementation
+#define rfnet_log(...)
+
 #endif
+
+/*****************************************************************************/
 
 #define RFNET_PEER_FLG_ALLOC (0x01)
 
@@ -149,7 +146,7 @@ static struct rfnet_peer* add_peer(struct rfnet* net, rfnet_node_id_t id) {
 
     if (free_peer != NULL && result_peer == NULL) {
 
-        RFNET_LOG("add new peer 0x%08llX\n\r", id);
+        rfnet_log("add new peer 0x%08llX\n\r", id);
 
         free_peer->id = id;
         free_peer->flags |= RFNET_PEER_FLG_ALLOC;
@@ -202,7 +199,7 @@ static void sync_time(struct rfnet* net, const struct rfnet_node* adv_node) {
         net->system_time_diff = 0;
     }
 
-    RFNET_LOG("CLK (%08llX) t:%lld dT:%lld rT:%lld\n\r",
+    rfnet_log("CLK (%08llX) t:%lld dT:%lld rT:%lld\n\r",
               clock_id,
               net->node.tdd.current_time,
               net->system_time_diff,
@@ -321,7 +318,7 @@ void rfnet_init(struct rfnet* net, const struct rfnet_config* config) {
         net->node.tdd.slot_duration = 50;
         net->node.tdd.gap_duration = 5;
 
-        RFNET_LOG("create new node %08llX", net->node.id);
+        rfnet_log("create new node %08llX", net->node.id);
     }
 }
 
@@ -366,7 +363,7 @@ void rfnet_get_stats(const struct rfnet* net, struct rfnet_stats* stats) {
 
 void rfnet_reset(struct rfnet* net) {
 
-    RFNET_LOG("reset network");
+    rfnet_log("reset network");
 
     memset(net->config.peer_storage.peers,
            0x00,
