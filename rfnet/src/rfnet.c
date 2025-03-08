@@ -98,6 +98,8 @@ static int receive_packet(struct rfnet* net, struct rfnet_packet* packet) {
         const uint32_t actual_crc = calculate_packet_crc(packet);
         if (actual_crc == packet->header.crc) {
             rc = 0;
+        } else {
+            rfnet_log(">> corrupted frame (%08X != %08X) <<", actual_crc, packet->header.crc);
         }
     } else {
         rc = -1;
