@@ -148,7 +148,7 @@ static struct rfnet_peer* add_peer(struct rfnet* net, rfnet_node_id_t id) {
 
     if (free_peer != NULL && result_peer == NULL) {
 
-        rfnet_log("add new peer 0x%08llX\n\r", id);
+        rfnet_log("add new peer 0x%08llX", id);
 
         free_peer->id = id;
         free_peer->flags |= RFNET_PEER_FLG_ALLOC;
@@ -201,11 +201,11 @@ static void sync_time(struct rfnet* net, const struct rfnet_node* adv_node) {
         net->system_time_diff = 0;
     }
 
-    rfnet_log("CLK (%08llX) t:%lld dT:%lld rT:%lld\n\r",
-              clock_id,
-              net->node.tdd.current_time,
-              net->system_time_diff,
-              rtime_diff);
+    // rfnet_log("CLK (%08llX) t:%lld dT:%lld rT:%lld",
+    //           clock_id,
+    //           net->node.tdd.current_time,
+    //           net->system_time_diff,
+    //           rtime_diff);
 
     net->node.slot_index = slot_index;
 }
