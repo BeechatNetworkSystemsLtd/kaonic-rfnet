@@ -17,7 +17,7 @@
 
 /*****************************************************************************/
 
-#define RFNET_PACKET_DATA_SIZE (512u * 2u)
+#define RFNET_PACKET_DATA_SIZE (2048 - 16)
 
 /*****************************************************************************/
 
@@ -98,6 +98,8 @@ struct rfnet_config {
     struct rfnet_peer_storage peer_storage;
 
     uint16_t beacon_interval;
+    uint16_t slot_duration;
+    uint16_t gap_duration;
 };
 
 struct rfnet_stats {

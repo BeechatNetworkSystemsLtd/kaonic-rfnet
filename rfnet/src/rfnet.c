@@ -317,8 +317,8 @@ void rfnet_init(struct rfnet* net, const struct rfnet_config* config) {
         generate_node_id(net);
 
         // Default TDD config
-        net->node.tdd.slot_duration = 50;
-        net->node.tdd.gap_duration = 5;
+        net->node.tdd.slot_duration = config->slot_duration;
+        net->node.tdd.gap_duration = config->gap_duration;
 
         rfnet_log("create new node %08llX", net->node.id);
     }
@@ -345,7 +345,7 @@ int rfnet_send(struct rfnet* net, const void* data, size_t len) {
     int rc = -1;
 
     if (rfnet_is_tx_free(net) == 0) {
-        if ((data != NULL) && (len > 0) && (len <= RFNET_PACKET_DATA_SIZE)) {
+        if ((data != NULL) && (len > 0) && (len < RFNET_PACKET_DATA_SIZE)) {
             memcpy(net->tx_packet.data, data, len);
             net->tx_packet.header.data_len = len;
             rc = 0;
