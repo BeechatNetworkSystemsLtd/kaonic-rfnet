@@ -95,11 +95,18 @@ static int receive_packet(struct rfnet* net, struct rfnet_packet* packet) {
 
     if (rc >= (int)sizeof(packet->header)) {
         rc = -1;
-        const uint32_t actual_crc = calculate_packet_crc(packet);
-        if (actual_crc == packet->header.crc) {
-            rc = 0;
-        } else {
-            rfnet_log(">> corrupted frame (%08X != %08X) <<", actual_crc, packet->header.crc);
+
+        if (packet->header.pattern == net->config.packet_pattern) {
+            const uint32_t actual_crc = calculate_packet_crc(packet);
+            if (actual_crc == packet->header.crc) {
+                rc = 0;
+            } else {
+                rfnet_log(">> corrupted frame (%08X != %08X) 0x%04X %u B<<",
+                          actual_crc,
+                          packet->header.crc,
+                          packet->header.pattern,
+                          packet->header.data_len);
+            }
         }
     } else {
         rc = -1;
@@ -201,11 +208,13 @@ static void sync_time(struct rfnet* net, const struct rfnet_node* adv_node) {
         net->system_time_diff = 0;
     }
 
-    // rfnet_log("CLK (%08llX) t:%lld dT:%lld rT:%lld",
-    //           clock_id,
-    //           net->node.tdd.current_time,
-    //           net->system_time_diff,
-    //           rtime_diff);
+#if 0 
+    rfnet_log("CLK (%08llX) t:%lld dT:%lld rT:%lld",
+              clock_id,
+              net->node.tdd.current_time,
+              net->system_time_diff,
+              rtime_diff);
+#endif
 
     net->node.slot_index = slot_index;
 }
@@ -218,20 +227,22 @@ static void handle_packet(struct rfnet* net, const struct rfnet_packet* packet) 
 
         switch ((enum rfnet_packet_type)packet->header.type) {
 
-            case RFNET_PACKET_TYPE_ADV: {
-                struct rfnet_node adv_node;
+            case RFNET_PACKET_TYPE_ADV:
+                if (net->config.mode == RFNET_MODE_TDD) {
+                    struct rfnet_node adv_node;
 
-                if (sizeof(adv_node) <= packet->header.data_len) {
-                    memcpy(&adv_node, packet->data, sizeof(adv_node));
+                    if (sizeof(adv_node) <= packet->header.data_len) {
+                        memcpy(&adv_node, packet->data, sizeof(adv_node));
 
-                    add_peer(net, adv_node.id);
+                        add_peer(net, adv_node.id);
 
-                    sync_time(net, &adv_node);
+                        sync_time(net, &adv_node);
+                    }
                 }
-            } break;
+                break;
 
             case RFNET_PACKET_TYPE_PAYLOAD:
-                if ((packet->header.data_len > 0) && net->config.iface.on_receive != NULL) {
+                if ((packet->header.data_len > 0) && (net->config.iface.on_receive != NULL)) {
                     net->config.iface.on_receive(
                         net->config.iface.ctx, packet->data, packet->header.data_len);
                 }
@@ -328,16 +339,31 @@ void rfnet_update(struct rfnet* net) {
 
     update_time(net);
 
-    if (is_current_slot(net)) {
-        if (interval_triggered(net, &net->last_beacon, net->config.beacon_interval)) {
-            send_advertise(net);
-        } else {
+    switch (net->config.mode) {
+        case RFNET_MODE_TDD:
+
+            if (is_current_slot(net)) {
+                if (interval_triggered(net, &net->last_beacon, net->config.beacon_interval)) {
+                    send_advertise(net);
+                } else {
+                    send_payload(net);
+                }
+            } else {
+                if (receive_packet(net, &net->rx_packet) == 0) {
+                    handle_packet(net, &net->rx_packet);
+                }
+            }
+
+            break;
+        case RFNET_MODE_LBT:
+
+            if (receive_packet(net, &net->rx_packet) == 0) {
+                handle_packet(net, &net->rx_packet);
+            }
+
             send_payload(net);
-        }
-    } else {
-        if (receive_packet(net, &net->rx_packet) == 0) {
-            handle_packet(net, &net->rx_packet);
-        }
+
+            break;
     }
 }
 

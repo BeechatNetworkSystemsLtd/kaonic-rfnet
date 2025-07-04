@@ -11,9 +11,9 @@
 
 /*****************************************************************************/
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 /*****************************************************************************/
 
@@ -32,6 +32,11 @@ typedef rfnet_time_t (*rfnet_iface_time_t)(void *ctx);
 typedef void (*rfnet_iface_on_send_t)(void *ctx);
 typedef void (*rfnet_iface_on_receive_t)(void *ctx, const void *data, size_t len);
 // clang-format on
+
+enum rfnet_mode {
+    RFNET_MODE_TDD,
+    RFNET_MODE_LBT,
+};
 
 /**
  * @brief Interface for RF Network
@@ -97,6 +102,8 @@ struct rfnet_config {
     struct rfnet_iface iface;
     struct rfnet_peer_storage peer_storage;
 
+    enum rfnet_mode mode;
+
     uint16_t beacon_interval;
     uint16_t slot_duration;
     uint16_t gap_duration;
@@ -137,6 +144,12 @@ struct rfnet {
 
 /*****************************************************************************/
 
+/**
+ * @brief Initialize network structure
+ *
+ * @param net Pointer to network
+ * @param config Pointer to network configuration
+ */
 void rfnet_init(struct rfnet* net, const struct rfnet_config* config);
 
 void rfnet_update(struct rfnet* net);
@@ -158,4 +171,3 @@ void rfnet_reset(struct rfnet* net);
 /*****************************************************************************/
 
 #endif // KAONIC_MODULES_RFNET_H__
-
